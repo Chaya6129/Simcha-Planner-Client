@@ -1,32 +1,73 @@
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+# מתכנן שמחות משותף
 
-Currently, two official plugins are available:
+מערכת למשפחה מורחבת לתכנון שמחות קטנות: סעודת הודיה, סיום מסכת, שבע ברכות, יום הולדת ועוד.
+המארגן פותח שמחה, מגדיר משימות ומזמין את בני המשפחה, וכל אחד לוקח על עצמו משימות. כולם רואים מי לקח מה, כמה כבר מוכן, ואיך עומד התקציב.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## קישורים
 
-## React Compiler
+| | |
+| --- | --- |
+| האתר | https://simcha-planner-client.onrender.com |
+| השרת (API) | https://simcha-planner-api.onrender.com |
+| תיעוד ה־API (Swagger) | https://simcha-planner-api.onrender.com/api-docs |
+| קוד השרת | `<קישור ל־Repository של השרת>` |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+> השרת רץ על שרת חינמי ב־Render, שנכנס למצב שינה כשאין פעילות. הבקשה הראשונה עשויה לקחת עד דקה. אחר כך הכל מהיר.
 
-## Expanding the Oxlint configuration
+## איך לנסות את המערכת
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+1. **נרשמים עם שני משתמשים** (למשל בשני דפדפנים שונים, או בחלון גלישה בסתר).
+2. **משתמש א' פותח שמחה** ב"שמחה חדשה", ומוסיף לה כמה משימות. הוא המארגן שלה.
+3. **משתמש א' מוסיף את המייל של משתמש ב'** ב"ניהול משתתפים".
+4. **משתמש ב' רואה את השמחה** ב"השמחות שלי", כמשתתף, ויכול לקחת משימות, לסמן "סיימתי" ולוותר.
+5. **משתמש א' רואה מי לקח מה**, ויכול להעביר משימה למשתתף אחר או לשחרר אותה. משתמש ב' מקבל על כך הודעה.
+6. **"בפעם הקודמת":** אם משתמש א' פותח שמחה נוספת עם משימה באותה כותרת, מוצג לידה מי ביצע אותה בשמחה הקודמת.
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+## מה יש במערכת
+
+- **הרשמה והתחברות** עם JWT. מסכים פרטיים חסומים למי שלא התחבר.
+- **שני תפקידים, לפי השמחה:** מארגן ומשתתף. אותו משתמש יכול להיות מארגן בשמחה אחת ומשתתף באחרת.
+- **השמחות שלי:** רשימה עם סינון לפי סוג וזמן (קרובות, שעברו), ומיון לפי תאריך.
+- **דף השמחה:** פרטים, מצב הכנה (כמה משימות הושלמו), ותקציב (מתוכנן, הוצא, נשאר).
+- **משימות:** חיפוש לפי כותרת, סינון לפי קטגוריה, "רק פנויות" ו"המשימות שלי", ומיון.
+- **פעולות על משימה:** לקיחה, סיום, ויתור (חופשי עד 48 שעות לפני השמחה, ואחר כך בקשת ויתור למארגן).
+- **פעולות מארגן:** יצירה ועריכה של שמחה, יצירת משימות, ניהול משתתפים, העברה ושחרור של משימות.
+- **הודעות** בתוך המערכת, עם מונה הודעות שלא נקראו בסרגל העליון.
+
+## טכנולוגיות
+
+**צד הלקוח (Repository זה)**
+- React + TypeScript (Vite)
+- React Router: ניתוב, והגנה על מסכים פרטיים
+- React Hook Form: כל הטפסים, עם ולידציה
+- React Query: כל הקריאות לשרת (useQuery לקריאה, useMutation לשינויים)
+- Context: המשתמש המחובר והתנתקות
+- Tailwind CSS: עיצוב
+
+**צד השרת**
+- ASP.NET Core Web API (.NET 10), Clean Architecture
+- PostgreSQL עם Entity Framework Core (Neon בענן)
+- JWT, Swagger
+
+## מבנה הפרויקט
+
+```
+src/
+  api/         קריאות לשרת: client.ts, ופונקציה לכל נקודת קצה (auth, events, tasks, invites, notifications)
+               types.ts (טיפוסים) ו־labels.ts (תרגום ערכי הבחירה לעברית)
+  auth/        שמירת ה־token, ו־AuthContext (המשתמש המחובר)
+  components/  Layout (סרגל עליון), ProtectedRoute (הגנה), TaskList (רשימת המשימות)
+  pages/       מסך לכל נתיב
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## הרצה מקומית
+
+```
+npm install
+npm run dev
+```
+
+בקובץ `.env.development` מוגדרת כתובת השרת המקומי: `VITE_API_URL=http://localhost:5080`.
