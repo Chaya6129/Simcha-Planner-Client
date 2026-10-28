@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createTask, type TaskInput } from '../api/tasks';
 import { taskCategoryLabels } from '../api/labels';
+import { toast } from 'sonner';
 
 const TaskFormPage = () => {
     const { eventId } = useParams();
@@ -21,6 +22,7 @@ const TaskFormPage = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['tasks', eventId] });
             queryClient.invalidateQueries({ queryKey: ['event', eventId] });
+            toast.success('המשימה נוספה');
             navigate(`/events/${eventId}`);
         },
         onError: (err) => {
@@ -37,7 +39,7 @@ const TaskFormPage = () => {
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="panel mx-auto flex max-w-2xl flex-col gap-5 p-8">
-            <h1 className="text-3xl font-bold">משימה חדשה</h1>
+            <h1 className="text-5xl">משימה חדשה</h1>
 
             <label className="field">
                 <span className="label">כותרת</span>

@@ -12,7 +12,15 @@ const EventPage = () => {
         queryFn: () => getEvent(eventId!),
     });
 
-    if (isLoading) return <p className="text-mist">טוען...</p>
+    if (isLoading) return (
+        <div className="flex flex-col gap-6">
+            <div className="skeleton h-80" />
+            <div className="grid gap-6 md:grid-cols-2">
+                <div className="skeleton h-44" />
+                <div className="skeleton h-44" />
+            </div>
+        </div>
+    );
     if (error) return <p className="error">{error.message}</p>;
     if (!data) return null;
 
@@ -24,15 +32,16 @@ const EventPage = () => {
     return (
         <div className="flex flex-col gap-6">
             {/* ראש העמוד בסגנון הזמנה לשמחה */}
-            <section className="rounded-2xl border-4 border-double border-gold/60 bg-white px-6 py-10 text-center shadow-sm">
+            <section className="relative isolate overflow-hidden rounded-2xl border-4 border-double border-gold/60 bg-white px-6 py-12 text-center shadow-sm">
+                <div className="ornament absolute inset-0 -z-10 opacity-20" aria-hidden />
                 <p className="font-semibold text-gold">{eventTypeLabels[data.type]}</p>
-                <h1 className="mt-2 text-5xl font-black leading-tight">{data.name}</h1>
+                <h1 className="mt-3 text-6xl leading-tight">{data.name}</h1>
                 <div className="mx-auto my-6 flex max-w-xs items-center gap-3 text-gold">
                     <span className="h-px flex-1 bg-gold/50" />
                     <span>✦</span>
                     <span className="h-px flex-1 bg-gold/50" />
                 </div>
-                <p className="font-display text-xl text-sapphire">
+                <p className="font-display text-2xl text-sapphire">
                     {date.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                     {', בשעה '}
                     {date.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
@@ -55,13 +64,13 @@ const EventPage = () => {
             <div className="grid gap-6 md:grid-cols-2">
                 {/* מצב הכנה */}
                 <section className="panel">
-                    <h2 className="text-2xl font-bold">מצב הכנה</h2>
-                    <p className="mt-4 font-display text-4xl font-bold text-sapphire">
+                    <h2 className="text-3xl">מצב הכנה</h2>
+                    <p className="mt-4 font-display text-5xl text-sapphire">
                         {data.progress.done}
-                        <span className="text-xl font-medium text-mist"> מתוך {data.progress.total} הושלמו</span>
+                        <span className="font-body text-lg text-mist"> מתוך {data.progress.total} הושלמו</span>
                     </p>
                     <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-pearl">
-                        <div className="h-full rounded-full bg-gold" style={{ width: `${percent}%` }} />
+                        <div className="h-full rounded-full bg-gradient-to-l from-gold to-gold-light transition-all duration-700" style={{ width: `${percent}%` }} />
                     </div>
                     <p className="mt-3 text-sm text-mist">
                         {data.progress.inProgress} בטיפול, {data.progress.open} עדיין פנויות
@@ -70,26 +79,26 @@ const EventPage = () => {
 
                 {/* תקציב */}
                 <section className="panel">
-                    <h2 className="text-2xl font-bold">תקציב</h2>
+                    <h2 className="text-3xl">תקציב</h2>
                     {data.budget === null ? (
                         <p className="mt-4 text-mist">לא הוגדר תקציב לשמחה הזו.</p>
                     ) : (
                         <dl className="mt-4 grid grid-cols-2 gap-4">
                             <div>
                                 <dt className="text-sm text-mist">תקציב</dt>
-                                <dd className="font-display text-2xl font-bold text-sapphire">{data.budgetSummary.budget} ₪</dd>
+                                <dd className="font-display text-3xl text-sapphire">{data.budgetSummary.budget} ₪</dd>
                             </div>
                             <div>
                                 <dt className="text-sm text-mist">מתוכנן</dt>
-                                <dd className="font-display text-2xl font-bold text-sapphire">{data.budgetSummary.planned} ₪</dd>
+                                <dd className="font-display text-3xl text-sapphire">{data.budgetSummary.planned} ₪</dd>
                             </div>
                             <div>
                                 <dt className="text-sm text-mist">הוצא</dt>
-                                <dd className="font-display text-2xl font-bold text-sapphire">{data.budgetSummary.spent} ₪</dd>
+                                <dd className="font-display text-3xl text-sapphire">{data.budgetSummary.spent} ₪</dd>
                             </div>
                             <div>
                                 <dt className="text-sm text-mist">נשאר</dt>
-                                <dd className={`font-display text-2xl font-bold ${(data.budgetSummary.remaining ?? 0) < 0 ? 'text-wine' : 'text-gold'}`}>
+                                <dd className={`font-display text-3xl ${(data.budgetSummary.remaining ?? 0) < 0 ? 'text-wine' : 'text-gold'}`}>
                                     {data.budgetSummary.remaining} ₪
                                 </dd>
                             </div>

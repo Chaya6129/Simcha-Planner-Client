@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { EventInput } from '../api/types';
 import { eventTypeLabels } from '../api/labels';
 import { createEvent, getEvent, updateEvent } from '../api/events';
+import { toast } from 'sonner';
 
 const toLocalInput = (iso: string) => {
     const date = new Date(iso);
@@ -46,6 +47,7 @@ const EventFormPage = () => {
         onSuccess: (saved) => {
             queryClient.invalidateQueries({ queryKey: ['events'] });
             queryClient.invalidateQueries({ queryKey: ['event', saved.id] });
+            toast.success(isEdit ? 'השינויים נשמרו' : 'השמחה נפתחה. מזל טוב!');
             navigate(`/events/${saved.id}`);
         },
         onError: (err) => {
@@ -61,11 +63,11 @@ const EventFormPage = () => {
         });
     };
 
-    if (isEdit && isLoading) return <p className="text-mist">טוען...</p>;
+    if (isEdit && isLoading) return <div className="skeleton mx-auto h-[36rem] max-w-2xl" />;
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="panel mx-auto flex max-w-2xl flex-col gap-5 p-8">
-            <h1 className="text-3xl font-bold">{isEdit ? 'עריכת שמחה' : 'שמחה חדשה'}</h1>
+            <h1 className="text-5xl">{isEdit ? 'עריכת שמחה' : 'שמחה חדשה'}</h1>
 
             <label className="field">
                 <span className="label">שם השמחה</span>

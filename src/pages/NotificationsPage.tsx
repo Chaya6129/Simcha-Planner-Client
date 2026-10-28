@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getNotifications, markAllAsRead, markAsRead } from '../api/notifications';
+import { toast } from 'sonner';
 
 const NotificationsPage = () => {
     const queryClient = useQueryClient();
@@ -19,13 +20,16 @@ const NotificationsPage = () => {
     const readOne = useMutation({
         mutationFn: (id: string) => markAsRead(id),
         onSuccess: refresh,
-        onError: (err) => alert(err.message),
+        onError: (err) => toast.error(err.message),
     });
 
     const readAll = useMutation({
         mutationFn: () => markAllAsRead(),
-        onSuccess: refresh,
-        onError: (err) => alert(err.message),
+        onSuccess: () => {
+            refresh();
+            toast.success('כל ההודעות סומנו כנקראו');
+        },
+        onError: (err) => toast.error(err.message),
     });
 
     const hasUnread = data?.items.some((n) => !n.isRead);
@@ -33,7 +37,7 @@ const NotificationsPage = () => {
     return (
         <div className="mx-auto flex max-w-2xl flex-col gap-6">
             <div className="flex flex-wrap items-end justify-between gap-4">
-                <h1 className="text-4xl font-bold">הודעות</h1>
+                <h1 className="text-5xl">הודעות</h1>
                 {hasUnread && (
                     <button onClick={() => readAll.mutate()} disabled={readAll.isPending} className="btn btn-ghost btn-sm">
                         סימון הכל כנקרא
@@ -41,7 +45,12 @@ const NotificationsPage = () => {
                 )}
             </div>
 
-            {isLoading && <p className="text-mist">טוען...</p>}
+            {isLoading && (
+                <div className="flex flex-col gap-3">
+                    <div className="skeleton h-20" />
+                    <div className="skeleton h-20" />
+                </div>
+            )}
             {error && <p className="error">{error.message}</p>}
             {data?.items.length === 0 && (
                 <div className="panel text-center text-mist">אין הודעות. כאן יופיעו העברות משימות ובקשות ויתור.</div>

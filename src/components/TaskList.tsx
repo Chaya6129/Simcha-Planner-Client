@@ -5,6 +5,7 @@ import { getParticipants } from '../api/events';
 import { taskCategoryLabels, taskStatusLabels } from '../api/labels';
 import type { TaskCategory, TaskStatus } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
+import { toast } from 'sonner';
 
 type Action = 'claim' | 'finish' | 'release' | 'askRelease';
 
@@ -12,10 +13,15 @@ const actions: Record<Action, (taskId: string) => Promise<unknown>> = {
     claim: claimTask,
     finish: (taskId) => updateTaskStatus(taskId, 'DONE'),
     release: releaseTask,
-    askRelease: async (taskId) => {
-        const res = await requestRelease(taskId);
-        alert(res.message);
-    },
+    // בקשת ויתור מחזירה הודעה מהשרת, ואותה מציגים
+    askRelease: async (taskId) => (await requestRelease(taskId)).message,
+};
+
+// הודעת הצלחה לכל פעולה
+const successMessages: Record<Exclude<Action, 'askRelease'>, string> = {
+    claim: 'המשימה עליך. בהצלחה!',
+    finish: 'כל הכבוד, המשימה הושלמה',
+    release: 'ויתרת על המשימה, והיא חזרה להיות פנויה',
 };
 
 // צבע התגית לפי סטטוס המשימה
@@ -37,11 +43,12 @@ const TaskList = ({ eventId, eventDate, isOrganizer }: { eventId: string; eventD
     const queryClient = useQueryClient();
     const action = useMutation({
         mutationFn: ({ type, taskId }: { type: Action; taskId: string }) => actions[type](taskId),
-        onSuccess: () => {
+        onSuccess: (result, { type }) => {
             queryClient.invalidateQueries({ queryKey: ['tasks', eventId] });
             queryClient.invalidateQueries({ queryKey: ['event', eventId] });
+            toast.success(type === 'askRelease' ? String(result) : successMessages[type]);
         },
-        onError: (err) => alert(err.message),
+        onError: (err) => toast.error(err.message),
     });
 
     // מארגן בלבד: רשימת המשתתפים, לבחירה למי להעביר משימה
@@ -55,11 +62,12 @@ const TaskList = ({ eventId, eventDate, isOrganizer }: { eventId: string; eventD
     const assign = useMutation({
         mutationFn: ({ taskId, assigneeId }: { taskId: string; assigneeId: string | null }) =>
             changeAssignee(taskId, assigneeId),
-        onSuccess: () => {
+        onSuccess: (_, { assigneeId }) => {
             queryClient.invalidateQueries({ queryKey: ['tasks', eventId] });
             queryClient.invalidateQueries({ queryKey: ['event', eventId] });
+            toast.success(assigneeId ? 'המשימה הועברה' : 'המשימה שוחררה');
         },
-        onError: (err) => alert(err.message),
+        onError: (err) => toast.error(err.message),
     });
 
     const myId = useAuth().user?.user.id;
@@ -78,7 +86,7 @@ const TaskList = ({ eventId, eventDate, isOrganizer }: { eventId: string; eventD
     return (
         <section className="panel">
             <div className="flex items-baseline gap-3">
-                <h2 className="text-2xl font-bold">משימות</h2>
+                <h2 className="text-3xl">משימות</h2>
                 {data && <span className="text-mist">{data.items.length}</span>}
             </div>
 
@@ -130,7 +138,13 @@ const TaskList = ({ eventId, eventDate, isOrganizer }: { eventId: string; eventD
                 </label>
             </div>
 
-            {isLoading && <p className="mt-6 text-mist">טוען משימות...</p>}
+            {isLoading && (
+                <div className="mt-6 flex flex-col gap-3">
+                    <div className="skeleton h-16" />
+                    <div className="skeleton h-16" />
+                    <div className="skeleton h-16" />
+                </div>
+            )}
             {error && <p className="error mt-6">{error.message}</p>}
             {data?.items.length === 0 && <p className="mt-6 text-mist">אין משימות שמתאימות לחיפוש.</p>}
 
@@ -138,7 +152,7 @@ const TaskList = ({ eventId, eventDate, isOrganizer }: { eventId: string; eventD
                 {data?.items.map((task) => {
                     const isMine = task.assignee?.id === myId && task.status !== 'DONE';
                     return (
-                        <li key={task.id} className="flex flex-wrap items-center gap-4 py-4">
+                        <li key={task.id} className="flex flex-wrap items-center gap-4 rounded-lg px-2 py-4 transition-colors duration-200 hover:bg-pearl/70">
                             <div className="flex min-w-0 flex-1 flex-col gap-1">
                                 <div className="flex flex-wrap items-center gap-2">
                                     <span className={`font-semibold ${task.status === 'DONE' ? 'text-mist line-through' : 'text-ink'}`}>

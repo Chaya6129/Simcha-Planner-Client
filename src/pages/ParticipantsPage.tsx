@@ -2,6 +2,7 @@ import { useForm } from 'react-hook-form'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createInvite, deleteInvite, getInvites } from '../api/invites'
+import { toast } from 'sonner'
 
 type InviteForm = {
     email: string;
@@ -27,6 +28,7 @@ const ParticipantsPage = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['invites', eventId] });
             reset();
+            toast.success('המשתתף נוסף');
         },
         onError: (err) => {
             setError('root.serverError', { message: err.message });
@@ -39,9 +41,10 @@ const ParticipantsPage = () => {
             queryClient.invalidateQueries({ queryKey: ['invites', eventId] });
             queryClient.invalidateQueries({ queryKey: ['tasks', eventId] });
             queryClient.invalidateQueries({ queryKey: ['event', eventId] });
+            toast.success('המשתתף הוסר');
         },
         onError: (err) => {
-            alert(err.message);
+            toast.error(err.message);
         },
     });
 
@@ -53,7 +56,7 @@ const ParticipantsPage = () => {
         <div className="mx-auto flex max-w-2xl flex-col gap-6">
             <div>
                 <Link to={`/events/${eventId}`} className="link text-sm">חזרה לשמחה</Link>
-                <h1 className="mt-2 text-3xl font-bold">ניהול משתתפים</h1>
+                <h1 className="mt-2 text-5xl">ניהול משתתפים</h1>
                 <p className="mt-1 text-mist">
                     מי שהמייל שלו ברשימה ונרשם למערכת, רואה את השמחה ויכול לקחת משימות.
                 </p>
@@ -81,7 +84,12 @@ const ParticipantsPage = () => {
             </form>
 
             <section className="panel">
-                {isLoading && <p className="text-mist">טוען...</p>}
+                {isLoading && (
+                    <div className="flex flex-col gap-3">
+                        <div className="skeleton h-12" />
+                        <div className="skeleton h-12" />
+                    </div>
+                )}
                 {error && <p className="error">{error.message}</p>}
                 {data?.items.length === 0 && <p className="text-mist">עדיין לא נוספו משתתפים. הוסיפו מייל כדי להזמין.</p>}
 
