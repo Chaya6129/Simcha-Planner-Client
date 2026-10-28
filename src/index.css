@@ -1,0 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Assistant:wght@400;600;700&display=swap');
+@import "tailwindcss";
+
+/* ===== צבעים וגופנים של האתר ===== */
+@theme {
+    --color-pearl: #F3F4F8;          /* רקע כללי: לבן פנינה קריר */
+    --color-sapphire: #1F2A56;       /* כחול ספיר: סרגל, כותרות, כפתור ראשי */
+    --color-sapphire-light: #2E3C73;
+    --color-gold: #A8832F;           /* זהב: קווים, הדגשות, כפתור הזמנה */
+    --color-gold-soft: #EFE5CB;
+    --color-wine: #7A2638;           /* יין: שגיאות והסרה */
+    --color-ink: #1C1E26;            /* טקסט */
+    --color-mist: #646A80;           /* טקסט משני */
+
+    --font-display: "Frank Ruhl Libre", "David", serif;
+    --font-body: "Assistant", "Segoe UI", Arial, sans-serif;
+}
+
+/* ===== בסיס ===== */
+@layer base {
+    body {
+        @apply bg-pearl text-ink font-body antialiased;
+    }
+    h1, h2, h3 {
+        @apply font-display text-sapphire;
+    }
+    :focus-visible {
+        @apply outline-2 outline-offset-2 outline-gold;
+    }
+}
+
+/* ===== רכיבים חוזרים (כדי לא לשכפל מחלקות בכל מסך) ===== */
+@layer components {
+    /* משטח לבן לתוכן */
+    .panel {
+        @apply rounded-2xl border border-sapphire/10 bg-white p-6 shadow-sm;
+    }
+
+    /* שדות טופס */
+    .field {
+        @apply flex flex-col gap-1.5;
+    }
+    .label {
+        @apply text-sm font-semibold text-sapphire;
+    }
+    .input {
+        @apply w-full rounded-lg border border-sapphire/20 bg-white px-3 py-2.5 text-ink
+               placeholder:text-mist/60
+               focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/25;
+    }
+    .error {
+        @apply text-sm text-wine;
+    }
+
+    /* כפתורים */
+    .btn {
+        @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2.5
+               font-semibold transition-colors
+               disabled:cursor-not-allowed disabled:opacity-50;
+    }
+    .btn-primary {
+        @apply bg-sapphire text-white hover:bg-sapphire-light;
+    }
+    .btn-gold {
+        @apply bg-gold text-white hover:bg-gold/90;
+    }
+    .btn-ghost {
+        @apply border border-sapphire/20 bg-white text-sapphire hover:border-sapphire/40;
+    }
+    .btn-danger {
+        @apply border border-wine/30 bg-white text-wine hover:bg-wine/5;
+    }
+    .btn-sm {
+        @apply px-3 py-1.5 text-sm;
+    }
+
+    /* תגית קטנה (סוג, סטטוס, תפקיד) */
+    .chip {
+        @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
+    }
+
+    /* קישור רגיל בתוך טקסט */
+    .link {
+        @apply font-semibold text-sapphire underline decoration-gold/50 underline-offset-4 hover:decoration-gold;
+    }
+
+    /* קו זהב כפול, כמו בהזמנה לשמחה */
+    .gold-rule {
+        @apply h-1.5 border-y border-gold/70;
+    }
+}

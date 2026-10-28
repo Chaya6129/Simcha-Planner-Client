@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { claimTask, getTasks, releaseTask, requestRelease, updateTaskStatus, type TaskFilters } from '../api/tasks';
+import { changeAssignee, claimTask, getTasks, releaseTask, requestRelease, updateTaskStatus, type TaskFilters } from '../api/tasks';
+import { getParticipants } from '../api/events';
 import { taskCategoryLabels, taskStatusLabels } from '../api/labels';
-import type { TaskCategory } from '../api/types';
+import type { TaskCategory, TaskStatus } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 
 type Action = 'claim' | 'finish' | 'release' | 'askRelease';
@@ -12,13 +13,20 @@ const actions: Record<Action, (taskId: string) => Promise<unknown>> = {
     finish: (taskId) => updateTaskStatus(taskId, 'DONE'),
     release: releaseTask,
     askRelease: async (taskId) => {
-        const reason = prompt('סיבת הוויתור (רשות):') ?? undefined;
-        const res = await requestRelease(taskId, reason);
+        const res = await requestRelease(taskId);
         alert(res.message);
     },
 };
 
-const TaskList = ({ eventId, eventDate, isOrganizer }: { eventId: string; eventDate: string; isOrganizer: boolean }) => {    const [filters, setFilters] = useState<TaskFilters>({});
+// צבע התגית לפי סטטוס המשימה
+const statusStyle: Record<TaskStatus, string> = {
+    OPEN: 'bg-gold-soft text-gold',
+    IN_PROGRESS: 'bg-sapphire/10 text-sapphire',
+    DONE: 'bg-emerald-50 text-emerald-700',
+};
+
+const TaskList = ({ eventId, eventDate, isOrganizer }: { eventId: string; eventDate: string; isOrganizer: boolean }) => {
+    const [filters, setFilters] = useState<TaskFilters>({});
     const update = (change: Partial<TaskFilters>) => setFilters({ ...filters, ...change });
 
     const { data, isLoading, error } = useQuery({
@@ -36,88 +44,160 @@ const TaskList = ({ eventId, eventDate, isOrganizer }: { eventId: string; eventD
         onError: (err) => alert(err.message),
     });
 
+    // מארגן בלבד: רשימת המשתתפים, לבחירה למי להעביר משימה
+    const { data: participants } = useQuery({
+        queryKey: ['participants', eventId],
+        queryFn: () => getParticipants(eventId),
+        enabled: isOrganizer,
+    });
+
+    // מארגן בלבד: העברת משימה למשתתף אחר, או שחרור (assigneeId = null)
+    const assign = useMutation({
+        mutationFn: ({ taskId, assigneeId }: { taskId: string; assigneeId: string | null }) =>
+            changeAssignee(taskId, assigneeId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['tasks', eventId] });
+            queryClient.invalidateQueries({ queryKey: ['event', eventId] });
+        },
+        onError: (err) => alert(err.message),
+    });
+
     const myId = useAuth().user?.user.id;
-const canReleaseFreely = isOrganizer || new Date(eventDate).getTime() - Date.now() > 48 * 60 * 60 * 1000;
-    const button = (type: Action, taskId: string, label: string) => (
-        <button onClick={() => action.mutate({ type, taskId })} disabled={action.isPending}>
+    const canReleaseFreely = isOrganizer || new Date(eventDate).getTime() - Date.now() > 48 * 60 * 60 * 1000;
+
+    const button = (type: Action, taskId: string, label: string, style: string) => (
+        <button
+            onClick={() => action.mutate({ type, taskId })}
+            disabled={action.isPending}
+            className={`btn btn-sm ${style}`}
+        >
             {label}
         </button>
     );
 
     return (
-        <div>
-            <h2>משימות {data?.items.length}</h2>
+        <section className="panel">
+            <div className="flex items-baseline gap-3">
+                <h2 className="text-2xl font-bold">משימות</h2>
+                {data && <span className="text-mist">{data.items.length}</span>}
+            </div>
 
-            <input
-                placeholder="חיפוש לפי כותרת"
-                value={filters.search ?? ''}
-                onChange={(e) => update({ search: e.target.value })}
-            />
-            <select
-                value={filters.category ?? ''}
-                onChange={(e) => update({ category: (e.target.value || undefined) as TaskCategory | undefined })}
-            >
-                <option value="">כל הקטגוריות</option>
-                {Object.entries(taskCategoryLabels).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                ))}
-            </select>
-            <label>
+            {/* חיפוש, סינון ומיון */}
+            <div className="mt-4 flex flex-wrap items-center gap-3">
                 <input
-                    type="checkbox"
-                    checked={filters.status === 'OPEN'}
-                    onChange={(e) => update({ status: e.target.checked ? 'OPEN' : undefined })}
+                    className="input max-w-56"
+                    placeholder="חיפוש לפי כותרת"
+                    value={filters.search ?? ''}
+                    onChange={(e) => update({ search: e.target.value })}
                 />
-                רק פנויות
-            </label>
-            <label>
-                <input
-                    type="checkbox"
-                    checked={!!filters.mine}
-                    onChange={(e) => update({ mine: e.target.checked || undefined })}
-                />
-                המשימות שלי
-            </label>
-            <select
-                value={filters.sort ?? ''}
-                onChange={(e) => update({ sort: (e.target.value || undefined) as TaskFilters['sort'] })}
-            >
-                <option value="">ללא מיון</option>
-                <option value="status">פנויות קודם</option>
-                <option value="category">לפי קטגוריה</option>
-                <option value="cost_desc">היקרה קודם</option>
-            </select>
+                <select
+                    className="input w-auto"
+                    value={filters.category ?? ''}
+                    onChange={(e) => update({ category: (e.target.value || undefined) as TaskCategory | undefined })}
+                >
+                    <option value="">כל הקטגוריות</option>
+                    {Object.entries(taskCategoryLabels).map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                    ))}
+                </select>
+                <select
+                    className="input w-auto"
+                    value={filters.sort ?? ''}
+                    onChange={(e) => update({ sort: (e.target.value || undefined) as TaskFilters['sort'] })}
+                >
+                    <option value="">ללא מיון</option>
+                    <option value="status">פנויות קודם</option>
+                    <option value="category">לפי קטגוריה</option>
+                    <option value="cost_desc">היקרה קודם</option>
+                </select>
+                <label className="flex cursor-pointer items-center gap-2 text-sm">
+                    <input
+                        type="checkbox"
+                        className="size-4 accent-gold"
+                        checked={filters.status === 'OPEN'}
+                        onChange={(e) => update({ status: e.target.checked ? 'OPEN' : undefined })}
+                    />
+                    רק פנויות
+                </label>
+                <label className="flex cursor-pointer items-center gap-2 text-sm">
+                    <input
+                        type="checkbox"
+                        className="size-4 accent-gold"
+                        checked={!!filters.mine}
+                        onChange={(e) => update({ mine: e.target.checked || undefined })}
+                    />
+                    המשימות שלי
+                </label>
+            </div>
 
-            {isLoading && <p>טוען משימות...</p>}
-            {error && <p>{error.message}</p>}
-            {data?.items.length === 0 && <p>אין משימות להצגה</p>}
+            {isLoading && <p className="mt-6 text-mist">טוען משימות...</p>}
+            {error && <p className="error mt-6">{error.message}</p>}
+            {data?.items.length === 0 && <p className="mt-6 text-mist">אין משימות שמתאימות לחיפוש.</p>}
 
-            <ul>
+            <ul className="mt-4 divide-y divide-sapphire/10">
                 {data?.items.map((task) => {
                     const isMine = task.assignee?.id === myId && task.status !== 'DONE';
                     return (
-                        <li key={task.id}>
-                            <strong>{task.title}</strong>
-                            {' · '}{taskCategoryLabels[task.category]}
-                            {' · '}{taskStatusLabels[task.status]}
-                            {task.cost != null && ` · ${task.cost} ₪`}
-                            <div>{task.assignee ? `אחראי: ${task.assignee.fullName}` : 'פנויה'}</div>
-                            {task.previousAssignee && (
-                                <div>
-                                    בפעם הקודמת: {task.previousAssignee.fullName}, {task.previousAssignee.eventName}
+                        <li key={task.id} className="flex flex-wrap items-center gap-4 py-4">
+                            <div className="flex min-w-0 flex-1 flex-col gap-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className={`font-semibold ${task.status === 'DONE' ? 'text-mist line-through' : 'text-ink'}`}>
+                                        {task.title}
+                                    </span>
+                                    <span className={`chip ${statusStyle[task.status]}`}>{taskStatusLabels[task.status]}</span>
+                                    <span className="chip bg-pearl text-mist">{taskCategoryLabels[task.category]}</span>
+                                    {task.cost != null && <span className="text-sm text-mist">{task.cost} ₪</span>}
                                 </div>
-                            )}
+                                <span className="text-sm text-mist">
+                                    {task.assignee ? `אחראי: ${task.assignee.fullName}` : 'מחכה למתנדב'}
+                                </span>
+                                {task.previousAssignee && (
+                                    <span className="text-xs text-gold">
+                                        בפעם הקודמת: {task.previousAssignee.fullName}, {task.previousAssignee.eventName}
+                                    </span>
+                                )}
+                            </div>
 
-                            {!task.assignee && button('claim', task.id, 'אני לוקח')}
-                            {isMine && task.status === 'IN_PROGRESS' && button('finish', task.id, 'סיימתי')}
-                            {isMine && (canReleaseFreely
-                                ? button('release', task.id, 'לוותר')
-                                : button('askRelease', task.id, 'בקשת ויתור'))}
+                            <div className="flex flex-wrap items-center gap-2">
+                                {!task.assignee && button('claim', task.id, 'אני לוקח', 'btn-gold')}
+                                {isMine && task.status === 'IN_PROGRESS' && button('finish', task.id, 'סיימתי', 'btn-primary')}
+                                {isMine && (canReleaseFreely
+                                    ? button('release', task.id, 'לוותר', 'btn-ghost')
+                                    : button('askRelease', task.id, 'בקשת ויתור', 'btn-ghost'))}
+
+                                {/* פקדי מארגן: העברה ושחרור */}
+                                {isOrganizer && task.status !== 'DONE' && (
+                                    <>
+                                        <select
+                                            className="input w-auto py-1.5 text-sm"
+                                            value=""
+                                            disabled={assign.isPending}
+                                            onChange={(e) => assign.mutate({ taskId: task.id, assigneeId: e.target.value })}
+                                        >
+                                            <option value="">העברה ל...</option>
+                                            {participants?.items
+                                                .filter((p) => p.id !== task.assignee?.id)
+                                                .map((p) => (
+                                                    <option key={p.id} value={p.id}>{p.fullName}</option>
+                                                ))}
+                                        </select>
+                                        {task.assignee && task.assignee.id !== myId && (
+                                            <button
+                                                onClick={() => assign.mutate({ taskId: task.id, assigneeId: null })}
+                                                disabled={assign.isPending}
+                                                className="btn btn-danger btn-sm"
+                                            >
+                                                שחרור
+                                            </button>
+                                        )}
+                                    </>
+                                )}
+                            </div>
                         </li>
                     );
                 })}
             </ul>
-        </div>
+        </section>
     );
 };
 

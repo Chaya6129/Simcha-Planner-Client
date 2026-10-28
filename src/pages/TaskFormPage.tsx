@@ -36,51 +36,69 @@ const TaskFormPage = () => {
     };
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)}>
-            <h1>משימה חדשה</h1>
+        <form onSubmit={handleSubmit(onSubmit)} className="panel mx-auto flex max-w-2xl flex-col gap-5 p-8">
+            <h1 className="text-3xl font-bold">משימה חדשה</h1>
 
-            <input
-                type="text"
-                placeholder="כותרת המשימה"
-                {...register('title', {
-                    required: 'כותרת היא שדה חובה',
-                    minLength: { value: 2, message: 'הכותרת צריכה להכיל לפחות 2 תווים' },
-                    maxLength: { value: 80, message: 'הכותרת יכולה להכיל עד 80 תווים' },
-                })}
-            />
-            {errors.title && <span>{errors.title.message}</span>}
+            <label className="field">
+                <span className="label">כותרת</span>
+                <input
+                    className="input"
+                    type="text"
+                    placeholder="למשל: להביא עוגה"
+                    {...register('title', {
+                        required: 'כותרת היא שדה חובה',
+                        minLength: { value: 2, message: 'הכותרת צריכה להכיל לפחות 2 תווים' },
+                        maxLength: { value: 80, message: 'הכותרת יכולה להכיל עד 80 תווים' },
+                    })}
+                />
+                <span className="text-xs text-mist">כותרת קבועה למשימות חוזרות מאפשרת לראות מי ביצע אותן בפעם הקודמת</span>
+                {errors.title && <span className="error">{errors.title.message}</span>}
+            </label>
 
-            <select {...register('category', { required: 'יש לבחור קטגוריה' })} defaultValue="">
-                <option value="" disabled>בחר קטגוריה</option>
-                {Object.entries(taskCategoryLabels).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                ))}
-            </select>
-            {errors.category && <span>{errors.category.message}</span>}
+            <div className="grid gap-5 sm:grid-cols-2">
+                <label className="field">
+                    <span className="label">קטגוריה</span>
+                    <select className="input" {...register('category', { required: 'יש לבחור קטגוריה' })} defaultValue="">
+                        <option value="" disabled>בחר קטגוריה</option>
+                        {Object.entries(taskCategoryLabels).map(([value, label]) => (
+                            <option key={value} value={value}>{label}</option>
+                        ))}
+                    </select>
+                    {errors.category && <span className="error">{errors.category.message}</span>}
+                </label>
 
-            <textarea
-                placeholder="תיאור (רשות)"
-                {...register('description', {
-                    maxLength: { value: 500, message: 'התיאור יכול להכיל עד 500 תווים' },
-                })}
-            />
-            {errors.description && <span>{errors.description.message}</span>}
+                <label className="field">
+                    <span className="label">עלות בש״ח (רשות)</span>
+                    <input
+                        className="input"
+                        type="number"
+                        step="0.01"
+                        {...register('cost', {
+                            valueAsNumber: true,
+                            min: { value: 0, message: 'העלות לא יכולה להיות שלילית' },
+                        })}
+                    />
+                    {errors.cost && <span className="error">{errors.cost.message}</span>}
+                </label>
+            </div>
 
-            <input
-                type="number"
-                step="0.01"
-                placeholder="עלות בש״ח (רשות)"
-                {...register('cost', {
-                    valueAsNumber: true,
-                    min: { value: 0, message: 'העלות לא יכולה להיות שלילית' },
-                })}
-            />
-            {errors.cost && <span>{errors.cost.message}</span>}
+            <label className="field">
+                <span className="label">תיאור (רשות)</span>
+                <textarea
+                    className="input min-h-24"
+                    {...register('description', {
+                        maxLength: { value: 500, message: 'התיאור יכול להכיל עד 500 תווים' },
+                    })}
+                />
+                {errors.description && <span className="error">{errors.description.message}</span>}
+            </label>
 
-            {errors.root?.serverError && <span>{errors.root.serverError.message}</span>}
+            {errors.root?.serverError && <p className="error">{errors.root.serverError.message}</p>}
 
-            <button type="submit" disabled={isPending}>שמירה</button>
-            <button type="button" onClick={() => navigate(`/events/${eventId}`)}>ביטול</button>
+            <div className="mt-2 flex gap-3">
+                <button type="submit" disabled={isPending} className="btn btn-primary">שמירה</button>
+                <button type="button" className="btn btn-ghost" onClick={() => navigate(`/events/${eventId}`)}>ביטול</button>
+            </div>
         </form>
     );
 };

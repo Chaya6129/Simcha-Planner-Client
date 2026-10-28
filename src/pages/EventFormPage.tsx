@@ -13,7 +13,7 @@ const toLocalInput = (iso: string) => {
 
 const EventFormPage = () => {
     const { eventId } = useParams();
-    const isEdit = !!eventId; 
+    const isEdit = !!eventId;
 
     const navigate = useNavigate();
     const queryClient = useQueryClient();
@@ -61,73 +61,102 @@ const EventFormPage = () => {
         });
     };
 
-    if (isEdit && isLoading) return <p>טוען...</p>;
+    if (isEdit && isLoading) return <p className="text-mist">טוען...</p>;
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)}>
-            <h1>{isEdit ? 'עריכת שמחה' : 'שמחה חדשה'}</h1>
+        <form onSubmit={handleSubmit(onSubmit)} className="panel mx-auto flex max-w-2xl flex-col gap-5 p-8">
+            <h1 className="text-3xl font-bold">{isEdit ? 'עריכת שמחה' : 'שמחה חדשה'}</h1>
 
-            <input
-                type="text"
-                placeholder="שם השמחה"
-                {...register('name', {
-                    required: 'שם הוא שדה חובה',
-                    minLength: { value: 2, message: 'השם צריך להכיל לפחות 2 תווים' },
-                    maxLength: { value: 80, message: 'השם יכול להכיל עד 80 תווים' },
-                })}
-            />
-            {errors.name && <span>{errors.name.message}</span>}
+            <label className="field">
+                <span className="label">שם השמחה</span>
+                <input
+                    className="input"
+                    type="text"
+                    placeholder="למשל: סעודת הודיה לסבא"
+                    {...register('name', {
+                        required: 'שם הוא שדה חובה',
+                        minLength: { value: 2, message: 'השם צריך להכיל לפחות 2 תווים' },
+                        maxLength: { value: 80, message: 'השם יכול להכיל עד 80 תווים' },
+                    })}
+                />
+                {errors.name && <span className="error">{errors.name.message}</span>}
+            </label>
 
-            <select {...register('type', { required: 'יש לבחור סוג שמחה' })} defaultValue="">
-                <option value="" disabled>בחר סוג שמחה</option>
-                {Object.entries(eventTypeLabels).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                ))}
-            </select>
-            {errors.type && <span>{errors.type.message}</span>}
+            <div className="grid gap-5 sm:grid-cols-2">
+                <label className="field">
+                    <span className="label">סוג השמחה</span>
+                    <select className="input" {...register('type', { required: 'יש לבחור סוג שמחה' })} defaultValue="">
+                        <option value="" disabled>בחר סוג שמחה</option>
+                        {Object.entries(eventTypeLabels).map(([value, label]) => (
+                            <option key={value} value={value}>{label}</option>
+                        ))}
+                    </select>
+                    {errors.type && <span className="error">{errors.type.message}</span>}
+                </label>
 
-            <input
-                type="datetime-local"
-                {...register('eventDate', { required: 'תאריך ושעה הם שדה חובה' })}
-            />
-            {errors.eventDate && <span>{errors.eventDate.message}</span>}
+                <label className="field">
+                    <span className="label">תאריך ושעה</span>
+                    <input
+                        className="input"
+                        type="datetime-local"
+                        {...register('eventDate', { required: 'תאריך ושעה הם שדה חובה' })}
+                    />
+                    {errors.eventDate && <span className="error">{errors.eventDate.message}</span>}
+                </label>
+            </div>
 
-            <input
-                type="text"
-                placeholder="מקום"
-                {...register('location', {
-                    required: 'מקום הוא שדה חובה',
-                    minLength: { value: 2, message: 'המקום צריך להכיל לפחות 2 תווים' },
-                    maxLength: { value: 150, message: 'המקום יכול להכיל עד 150 תווים' },
-                })}
-            />
-            {errors.location && <span>{errors.location.message}</span>}
+            <label className="field">
+                <span className="label">מקום</span>
+                <input
+                    className="input"
+                    type="text"
+                    placeholder="למשל: אצל סבא וסבתא, רחוב הרצל 5"
+                    {...register('location', {
+                        required: 'מקום הוא שדה חובה',
+                        minLength: { value: 2, message: 'המקום צריך להכיל לפחות 2 תווים' },
+                        maxLength: { value: 150, message: 'המקום יכול להכיל עד 150 תווים' },
+                    })}
+                />
+                {errors.location && <span className="error">{errors.location.message}</span>}
+            </label>
 
-            <textarea
-                placeholder="הערות (רשות)"
-                {...register('notes', {
-                    maxLength: { value: 1000, message: 'ההערות יכולות להכיל עד 1,000 תווים' },
-                })}
-            />
-            {errors.notes && <span>{errors.notes.message}</span>}
+            <label className="field">
+                <span className="label">הערות (רשות)</span>
+                <textarea
+                    className="input min-h-24"
+                    {...register('notes', {
+                        maxLength: { value: 1000, message: 'ההערות יכולות להכיל עד 1,000 תווים' },
+                    })}
+                />
+                {errors.notes && <span className="error">{errors.notes.message}</span>}
+            </label>
 
-            <input
-                type="number"
-                step="0.01"
-                placeholder="תקציב בש״ח (רשות)"
-                {...register('budget', {
-                    valueAsNumber: true,
-                    min: { value: 0, message: 'התקציב לא יכול להיות שלילי' },
-                })}
-            />
-            {errors.budget && <span>{errors.budget.message}</span>}
+            <label className="field sm:max-w-xs">
+                <span className="label">תקציב בש״ח (רשות)</span>
+                <input
+                    className="input"
+                    type="number"
+                    step="0.01"
+                    {...register('budget', {
+                        valueAsNumber: true,
+                        min: { value: 0, message: 'התקציב לא יכול להיות שלילי' },
+                    })}
+                />
+                {errors.budget && <span className="error">{errors.budget.message}</span>}
+            </label>
 
-            {errors.root?.serverError && <span>{errors.root.serverError.message}</span>}
+            {errors.root?.serverError && <p className="error">{errors.root.serverError.message}</p>}
 
-            <button type="submit" disabled={isPending}>שמירה</button>
-            <button type="button" onClick={() => navigate(isEdit ? `/events/${eventId}` : '/events')}>
-                ביטול
-            </button>
+            <div className="mt-2 flex gap-3">
+                <button type="submit" disabled={isPending} className="btn btn-primary">שמירה</button>
+                <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => navigate(isEdit ? `/events/${eventId}` : '/events')}
+                >
+                    ביטול
+                </button>
+            </div>
         </form>
     );
 };
