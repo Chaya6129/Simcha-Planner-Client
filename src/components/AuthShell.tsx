@@ -1,10 +1,9 @@
+//קומפוננטה זו נכתבה ע"י בינה מלאכותית לצרכי עיצוב 
 import type { ReactNode } from 'react';
 
-// מסגרת משותפת למסכי התחברות והרשמה: צד דקורטיבי, וצד הטופס
 const AuthShell = ({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) => {
     return (
         <div className="grid min-h-screen md:grid-cols-[1.1fr_1fr]">
-            {/* הצד הדקורטיבי (בעברית הוא מימין) */}
             <aside className="relative isolate hidden overflow-hidden bg-sapphire p-12 text-white md:flex md:flex-col md:justify-between">
                 <div className="ornament absolute inset-0 -z-10 opacity-40" aria-hidden />
                 <div className="absolute -bottom-40 -left-32 -z-10 size-[30rem] rounded-full bg-gold/25 blur-3xl animate-drift" aria-hidden />

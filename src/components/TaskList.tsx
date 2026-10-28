@@ -17,14 +17,12 @@ const actions: Record<Action, (taskId: string) => Promise<unknown>> = {
     askRelease: async (taskId) => (await requestRelease(taskId)).message,
 };
 
-// הודעת הצלחה לכל פעולה
 const successMessages: Record<Exclude<Action, 'askRelease'>, string> = {
     claim: 'המשימה עליך. בהצלחה!',
     finish: 'כל הכבוד, המשימה הושלמה',
     release: 'ויתרת על המשימה, והיא חזרה להיות פנויה',
 };
 
-// צבע התגית לפי סטטוס המשימה
 const statusStyle: Record<TaskStatus, string> = {
     OPEN: 'bg-gold-soft text-gold',
     IN_PROGRESS: 'bg-sapphire/10 text-sapphire',
@@ -51,15 +49,13 @@ const TaskList = ({ eventId, eventDate, isOrganizer }: { eventId: string; eventD
         onError: (err) => toast.error(err.message),
     });
 
-    // מארגן בלבד: רשימת המשתתפים, לבחירה למי להעביר משימה
     const { data: participants } = useQuery({
         queryKey: ['participants', eventId],
         queryFn: () => getParticipants(eventId),
         enabled: isOrganizer,
     });
 
-    // מארגן בלבד: העברת משימה למשתתף אחר, או שחרור (assigneeId = null)
-    const assign = useMutation({
+     const assign = useMutation({
         mutationFn: ({ taskId, assigneeId }: { taskId: string; assigneeId: string | null }) =>
             changeAssignee(taskId, assigneeId),
         onSuccess: (_, { assigneeId }) => {
