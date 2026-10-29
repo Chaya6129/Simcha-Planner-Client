@@ -38,9 +38,12 @@ export const serverRequest = async <T>(
     });
 
     if (response.status === 401 && path !== '/api/auth/login') {
-        localStorage.removeItem('token');
+    localStorage.removeItem('token');
+    if (window.location.pathname !== '/login') {
         window.location.href = '/login';
     }
+    throw new ApiError(401, 'UNAUTHORIZED', 'נדרשת התחברות מחדש');
+}
 
     if (!response.ok) {
         const data = await response.json();
